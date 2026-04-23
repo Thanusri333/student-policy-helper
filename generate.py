@@ -1,44 +1,27 @@
-"""Generate final answers for the Student Policy Helper using OpenAI."""
+"""Generate concise answers from retrieved document chunks."""
 
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
-
-load_dotenv()
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+import re
 
 
 def generate_answer(question, relevant_chunks):
-    """Generate an answer using retrieved document chunks as context."""
-    context = "\n\n".join(relevant_chunks)
+    """Return a short answer based on the most relevant retrieved text."""
+    if not relevant_chunks:
+        return "I could not find that information in the uploaded documents."
 
-    prompt = f"""
-You are a university policy assistant.
-Answer the question only using the context below.
-If the answer is not in the context, say:
-"I could not find that information in the uploaded documents."
+    best_chunk = relevant_chunks[0]
+    sentences = re.split(r"(?<=[.!?])\s+", best_chunk)
+    question_words = [
+        word.lower() for word in question.split()
+        if len(word) > 3
+    ]
 
-Context:
-{context}
+    matched_sentences = []
+    for sentence in sentences:
+        sentence_lower = sentence.lower()
+        if any(word in sentence_lower for word in question_words):
+            matched_sentences.append(sentence.strip())
 
-Question:
-{question}
-"""
+    if matched_sentences:
+        return " ".join(matched_sentences[:2])
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You answer questions using university "
-                    "policy documents only."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0,
-    )
-
-    return response.choices[0].message.content
+    return " ".join(sentences[:2]).strip()
