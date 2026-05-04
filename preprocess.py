@@ -9,7 +9,7 @@ def clean_text(text):
     return text.strip()
 
 
-def chunk_text(text, chunk_size=500, chunk_overlap=50):
+def chunk_text(text, chunk_size=512, chunk_overlap=50):
     """Split text into overlapping word-based chunks."""
     words = text.split()
     chunks = []
